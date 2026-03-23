@@ -37,12 +37,28 @@ function useScrollAnimation() {
       { threshold: 0.08, rootMargin: "0px 0px -20px 0px" }
     );
 
+    // Scroll-triggered slide animations
+    const slideElements = document.querySelectorAll(".slide-in-left, .slide-in-right");
+    const slideObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            slideObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
+    );
+
     elements.forEach((el) => observer.observe(el));
     featureCards.forEach((el) => cardObserver.observe(el));
+    slideElements.forEach((el) => slideObserver.observe(el));
 
     return () => {
       observer.disconnect();
       cardObserver.disconnect();
+      slideObserver.disconnect();
     };
   }, []);
 }
@@ -96,6 +112,60 @@ function useParallax() {
   }, []);
 
   return ref;
+}
+
+/* ─── Cursor Parallax Hook for 3D phone tilt ─── */
+
+function useCursorParallax() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const phonesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const phones = phonesRef.current;
+    if (!container || !phones) return;
+
+    let rafId: number;
+
+    const onMouseMove = (e: MouseEvent) => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // Normalize to -1..1
+        const nx = (e.clientX - centerX) / (rect.width / 2);
+        const ny = (e.clientY - centerY) / (rect.height / 2);
+
+        // Clamp
+        const clampedX = Math.max(-1, Math.min(1, nx));
+        const clampedY = Math.max(-1, Math.min(1, ny));
+
+        // Rotate opposite direction, max 5deg
+        const rotateY = clampedX * -5;
+        const rotateX = clampedY * 5;
+
+        phones.style.transform = `perspective(1000px) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+      });
+    };
+
+    const onMouseLeave = () => {
+      cancelAnimationFrame(rafId);
+      phones.style.transform = `perspective(1000px) rotateY(0deg) rotateX(0deg)`;
+    };
+
+    container.addEventListener("mousemove", onMouseMove);
+    container.addEventListener("mouseleave", onMouseLeave);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      container.removeEventListener("mousemove", onMouseMove);
+      container.removeEventListener("mouseleave", onMouseLeave);
+    };
+  }, []);
+
+  return { containerRef, phonesRef };
 }
 
 /* ─── Counter Animation Hook ─── */
@@ -200,13 +270,19 @@ function FloatingParticles() {
 function PhoneFrame({
   children,
   className = "",
+  scale = "normal",
 }: {
   children: React.ReactNode;
   className?: string;
+  scale?: "normal" | "large";
 }) {
+  const sizes = scale === "large"
+    ? "w-[300px] h-[620px] md:w-[320px] md:h-[660px]"
+    : "w-[260px] h-[540px]";
+
   return (
     <div
-      className={`relative flex-shrink-0 w-[260px] h-[540px] rounded-[2.5rem] bg-[#1a1a1a] border-[3px] border-[#2a2a2a] shadow-[0_0_60px_rgba(200,169,110,0.08),0_25px_50px_rgba(0,0,0,0.5)] overflow-hidden ${className}`}
+      className={`relative flex-shrink-0 ${sizes} rounded-[2.5rem] bg-[#1a1a1a] border-[3px] border-[#2a2a2a] shadow-[0_0_60px_rgba(200,169,110,0.08),0_25px_50px_rgba(0,0,0,0.5)] overflow-hidden ${className}`}
     >
       {/* Notch */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100px] h-[28px] bg-[#1a1a1a] rounded-b-2xl z-20 flex items-center justify-center">
@@ -220,279 +296,411 @@ function PhoneFrame({
   );
 }
 
-function MockupKrewFeed() {
+function MockupKrewFeed({ large = false }: { large?: boolean }) {
   return (
-    <div className="animate-phone-float-delayed order-1">
-      <PhoneFrame className="relative z-0 rotate-[-6deg] scale-[0.88] translate-x-[20px]">
-        <div className="h-full flex flex-col text-white text-[10px]">
-          {/* Status bar spacer */}
-          <div className="h-8" />
+    <PhoneFrame scale={large ? "large" : "normal"} className={large ? "" : "relative z-0 rotate-[-6deg] scale-[0.88] translate-x-[20px]"}>
+      <div className="h-full flex flex-col text-white text-[10px]">
+        {/* Status bar spacer */}
+        <div className="h-8" />
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2">
-            <span className="font-bold text-[14px] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-              <span className="text-white">K</span>
-              <span className="text-[var(--color-gold)]">REW</span>
-            </span>
-            <div className="relative">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 01-3.46 0" />
-              </svg>
-              <span className="absolute -top-1 -right-1 w-[8px] h-[8px] rounded-full bg-[var(--color-gold)]" />
-            </div>
-          </div>
-
-          {/* Stories */}
-          <div className="flex gap-3 px-4 py-2 overflow-hidden">
-            {[
-              { name: "Moi", color: "var(--color-gold)" },
-              { name: "Sophie", color: "#8B5CF6" },
-              { name: "Thomas", color: "#3B82F6" },
-              { name: "Léa", color: "#EC4899" },
-            ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
-                <div
-                  className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-[11px] font-bold"
-                  style={{
-                    background: `linear-gradient(135deg, ${s.color}, ${s.color}88)`,
-                    border: i === 0 ? "2px dashed rgba(255,255,255,0.3)" : `2px solid ${s.color}`,
-                  }}
-                >
-                  {i === 0 ? "+" : s.name[0]}
-                </div>
-                <span className="text-[8px] text-white/50">{s.name}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Compose bar */}
-          <div className="mx-4 my-2 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white/25 text-[9px]">
-            Quoi de neuf ?
-          </div>
-
-          {/* Post card */}
-          <div className="mx-4 mt-1 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-[26px] h-[26px] rounded-full bg-gradient-to-br from-[#EC5B13] to-[#EC5B13]/60 flex items-center justify-center text-[10px] font-bold">
-                M
-              </div>
-              <div>
-                <div className="font-semibold text-[9px] text-white/90">MALIK BENDJELLOUL</div>
-                <div className="text-[7px] text-white/30">DOP &middot; il y a 3h</div>
-              </div>
-            </div>
-            <div className="inline-block px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 text-[8px] font-semibold mb-2">
-              RECHERCHE TECHNICIEN
-            </div>
-            <p className="text-[9px] text-white/50 leading-relaxed">
-              Cherche un Chef Elec dispo pour un court-métrage le 15 avril. 3 jours, Paris.
-            </p>
-            {/* Actions */}
-            <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/[0.05]">
-              <span className="text-white/30">🤙 12</span>
-              <span className="text-white/30">💬 4</span>
-              <span className="text-white/30">↗ 2</span>
-            </div>
-          </div>
-
-          {/* Filter chips */}
-          <div className="flex gap-1.5 px-4 mt-3 overflow-hidden">
-            {["Tout", "Publi", "Artistes", "Technicien", "Wrap"].map((c, i) => (
-              <span
-                key={i}
-                className={`px-2.5 py-1 rounded-full text-[8px] font-medium flex-shrink-0 ${
-                  i === 0
-                    ? "bg-[var(--color-gold)] text-[var(--color-dark)]"
-                    : "bg-white/[0.05] text-white/40"
-                }`}
-              >
-                {c}
-              </span>
-            ))}
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-2">
+          <span className="font-bold text-[14px] tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+            <span className="text-white">K</span>
+            <span className="text-[var(--color-gold)]">REW</span>
+          </span>
+          <div className="relative">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 01-3.46 0" />
+            </svg>
+            <span className="absolute -top-1 -right-1 w-[8px] h-[8px] rounded-full bg-[var(--color-gold)]" />
           </div>
         </div>
-      </PhoneFrame>
-    </div>
+
+        {/* Stories */}
+        <div className="flex gap-3 px-4 py-2 overflow-hidden">
+          {[
+            { name: "Moi", color: "var(--color-gold)" },
+            { name: "Sophie", color: "#8B5CF6" },
+            { name: "Thomas", color: "#3B82F6" },
+            { name: "Léa", color: "#EC4899" },
+          ].map((s, i) => (
+            <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
+              <div
+                className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-[11px] font-bold"
+                style={{
+                  background: `linear-gradient(135deg, ${s.color}, ${s.color}88)`,
+                  border: i === 0 ? "2px dashed rgba(255,255,255,0.3)" : `2px solid ${s.color}`,
+                }}
+              >
+                {i === 0 ? "+" : s.name[0]}
+              </div>
+              <span className="text-[8px] text-white/50">{s.name}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Compose bar */}
+        <div className="mx-4 my-2 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white/25 text-[9px]">
+          Quoi de neuf ?
+        </div>
+
+        {/* Post card */}
+        <div className="mx-4 mt-1 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-[26px] h-[26px] rounded-full bg-gradient-to-br from-[#EC5B13] to-[#EC5B13]/60 flex items-center justify-center text-[10px] font-bold">
+              M
+            </div>
+            <div>
+              <div className="font-semibold text-[9px] text-white/90">MALIK BENDJELLOUL</div>
+              <div className="text-[7px] text-white/30">DOP &middot; il y a 3h</div>
+            </div>
+          </div>
+          <div className="inline-block px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 text-[8px] font-semibold mb-2">
+            RECHERCHE TECHNICIEN
+          </div>
+          <p className="text-[9px] text-white/50 leading-relaxed">
+            Cherche un Chef Elec dispo pour un court-métrage le 15 avril. 3 jours, Paris.
+          </p>
+          {/* Actions */}
+          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/[0.05]">
+            <span className="text-white/30">🤙 12</span>
+            <span className="text-white/30">💬 4</span>
+            <span className="text-white/30">↗ 2</span>
+          </div>
+        </div>
+
+        {/* Filter chips */}
+        <div className="flex gap-1.5 px-4 mt-3 overflow-hidden">
+          {["Tout", "Publi", "Artistes", "Technicien", "Wrap"].map((c, i) => (
+            <span
+              key={i}
+              className={`px-2.5 py-1 rounded-full text-[8px] font-medium flex-shrink-0 ${
+                i === 0
+                  ? "bg-[var(--color-gold)] text-[var(--color-dark)]"
+                  : "bg-white/[0.05] text-white/40"
+              }`}
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      </div>
+    </PhoneFrame>
   );
 }
 
-function MockupProjectDashboard() {
+function MockupProjectDashboard({ large = false }: { large?: boolean }) {
   return (
-    <div className="animate-phone-float order-2" style={{ position: 'relative', zIndex: 10 }}>
-      <PhoneFrame className="relative z-20 scale-[1.15] shadow-[0_0_80px_rgba(200,169,110,0.12),0_30px_60px_rgba(0,0,0,0.6)]">
-        <div className="h-full flex flex-col text-white text-[10px]">
-          {/* Status bar spacer */}
-          <div className="h-8" />
+    <PhoneFrame scale={large ? "large" : "normal"} className={large ? "" : "relative z-20 scale-[1.15] shadow-[0_0_80px_rgba(200,169,110,0.12),0_30px_60px_rgba(0,0,0,0.6)]"}>
+      <div className="h-full flex flex-col text-white text-[10px]">
+        {/* Status bar spacer */}
+        <div className="h-8" />
 
-          {/* Project header */}
-          <div className="px-4 pt-2 pb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[7px] text-white/30 uppercase tracking-widest font-semibold">Projet</span>
-              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[8px] font-semibold">
-                PRÉ-PRODUCTION
+        {/* Project header */}
+        <div className="px-4 pt-2 pb-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[7px] text-white/30 uppercase tracking-widest font-semibold">Projet</span>
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[8px] font-semibold">
+              PRÉ-PRODUCTION
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-[18px] font-black tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+              ECLIPSE
+            </h2>
+            <div className="flex items-center gap-1">
+              <span className="text-[20px] font-black text-[var(--color-gold)]" style={{ fontFamily: "var(--font-display)" }}>
+                J-12
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <h2 className="text-[18px] font-black tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                ECLIPSE
-              </h2>
-              <div className="flex items-center gap-1">
-                <span className="text-[20px] font-black text-[var(--color-gold)]" style={{ fontFamily: "var(--font-display)" }}>
-                  J-12
-                </span>
-              </div>
-            </div>
           </div>
+        </div>
 
-          {/* Team avatars */}
-          <div className="px-4 mb-3">
-            <div className="text-[8px] text-white/30 uppercase tracking-wider font-semibold mb-2">Équipe</div>
-            <div className="flex -space-x-2">
-              {[
-                { bg: "#8B5CF6", letter: "S" },
-                { bg: "#3B82F6", letter: "T" },
-                { bg: "#EC4899", letter: "L" },
-                { bg: "#EC5B13", letter: "M" },
-                { bg: "#10B981", letter: "A" },
-              ].map((a, i) => (
-                <div
-                  key={i}
-                  className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-[#0A0A0A]"
-                  style={{ backgroundColor: a.bg }}
-                >
-                  {a.letter}
-                </div>
-              ))}
-              <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[9px] font-semibold border-2 border-[#0A0A0A] bg-white/10 text-white/50">
-                +3
-              </div>
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div className="grid grid-cols-2 gap-2 px-4 mb-3">
+        {/* Team avatars */}
+        <div className="px-4 mb-3">
+          <div className="text-[8px] text-white/30 uppercase tracking-wider font-semibold mb-2">Équipe</div>
+          <div className="flex -space-x-2">
             {[
-              { icon: "💬", label: "Chat", count: "3" },
-              { icon: "📄", label: "Documents", count: "12" },
-              { icon: "📅", label: "Planning", count: "" },
-              { icon: "🔧", label: "Équipement", count: "5" },
+              { bg: "#8B5CF6", letter: "S" },
+              { bg: "#3B82F6", letter: "T" },
+              { bg: "#EC4899", letter: "L" },
+              { bg: "#EC5B13", letter: "M" },
+              { bg: "#10B981", letter: "A" },
             ].map((a, i) => (
               <div
                 key={i}
-                className="p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center gap-2"
+                className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-[#0A0A0A]"
+                style={{ backgroundColor: a.bg }}
               >
-                <span className="text-[14px]">{a.icon}</span>
-                <div>
-                  <div className="text-[9px] font-semibold text-white/80">{a.label}</div>
-                  {a.count && (
-                    <div className="text-[7px] text-[var(--color-gold)]">{a.count} nouveau{a.count !== "1" ? "x" : ""}</div>
-                  )}
+                {a.letter}
+              </div>
+            ))}
+            <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-[9px] font-semibold border-2 border-[#0A0A0A] bg-white/10 text-white/50">
+              +3
+            </div>
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-2 gap-2 px-4 mb-3">
+          {[
+            { icon: "💬", label: "Chat", count: "3" },
+            { icon: "📄", label: "Documents", count: "12" },
+            { icon: "📅", label: "Planning", count: "" },
+            { icon: "🔧", label: "Équipement", count: "5" },
+          ].map((a, i) => (
+            <div
+              key={i}
+              className="p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center gap-2"
+            >
+              <span className="text-[14px]">{a.icon}</span>
+              <div>
+                <div className="text-[9px] font-semibold text-white/80">{a.label}</div>
+                {a.count && (
+                  <div className="text-[7px] text-[var(--color-gold)]">{a.count} nouveau{a.count !== "1" ? "x" : ""}</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Activity */}
+        <div className="px-4 flex-1">
+          <div className="text-[8px] text-white/30 uppercase tracking-wider font-semibold mb-2">Activité</div>
+          <div className="space-y-2">
+            {[
+              { avatar: "L", color: "#EC4899", text: "Léa a uploadé le script v3", time: "il y a 2h" },
+              { avatar: "T", color: "#3B82F6", text: "Thomas a confirmé les dates", time: "il y a 5h" },
+              { avatar: "S", color: "#8B5CF6", text: "Sophie a validé le budget", time: "hier" },
+            ].map((a, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div
+                  className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                  style={{ backgroundColor: a.color }}
+                >
+                  {a.avatar}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[9px] text-white/60 truncate">{a.text}</div>
+                  <div className="text-[7px] text-white/25">{a.time}</div>
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Activity */}
-          <div className="px-4 flex-1">
-            <div className="text-[8px] text-white/30 uppercase tracking-wider font-semibold mb-2">Activité</div>
-            <div className="space-y-2">
-              {[
-                { avatar: "L", color: "#EC4899", text: "Léa a uploadé le script v3", time: "il y a 2h" },
-                { avatar: "T", color: "#3B82F6", text: "Thomas a confirmé les dates", time: "il y a 5h" },
-                { avatar: "S", color: "#8B5CF6", text: "Sophie a validé le budget", time: "hier" },
-              ].map((a, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div
-                    className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
-                    style={{ backgroundColor: a.color }}
-                  >
-                    {a.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[9px] text-white/60 truncate">{a.text}</div>
-                    <div className="text-[7px] text-white/25">{a.time}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
-      </PhoneFrame>
-    </div>
+      </div>
+    </PhoneFrame>
   );
 }
 
 function MockupStoryViewer() {
   return (
-    <div className="animate-phone-float-delayed order-3" style={{ position: 'relative', zIndex: -1 }}>
-      <PhoneFrame className="relative -z-10 rotate-[6deg] scale-[0.88] -translate-x-[40px]">
-        <div className="h-full flex flex-col relative">
-          {/* Gradient background — deep blue to dark teal */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0F2847] via-[#0D3B4F] to-[#0A2F3A]" />
+    <PhoneFrame className="relative -z-10 rotate-[6deg] scale-[0.88] -translate-x-[40px]">
+      <div className="h-full flex flex-col relative">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0F2847] via-[#0D3B4F] to-[#0A2F3A]" />
 
-          {/* Content overlay */}
-          <div className="relative z-10 h-full flex flex-col">
-            {/* Status bar spacer */}
-            <div className="h-8" />
+        {/* Content overlay */}
+        <div className="relative z-10 h-full flex flex-col">
+          {/* Status bar spacer */}
+          <div className="h-8" />
 
-            {/* Progress bars */}
-            <div className="flex gap-1 px-4 pt-1 mb-3">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="flex-1 h-[2px] rounded-full bg-white/20 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${
-                      i < 1
-                        ? "bg-white w-full"
-                        : i === 1
-                        ? "bg-white w-[60%]"
-                        : "bg-transparent w-0"
-                    }`}
-                  />
+          {/* Progress bars */}
+          <div className="flex gap-1 px-4 pt-1 mb-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex-1 h-[2px] rounded-full bg-white/20 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    i < 1
+                      ? "bg-white w-full"
+                      : i === 1
+                      ? "bg-white w-[60%]"
+                      : "bg-transparent w-0"
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* User info */}
+          <div className="flex items-center gap-2 px-4 mb-auto">
+            <div className="w-[28px] h-[28px] rounded-full bg-gradient-to-br from-[var(--color-gold)] to-[var(--color-gold)]/60 flex items-center justify-center text-[11px] font-bold text-[var(--color-dark)]">
+              S
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold text-white">Sophie Marceau</span>
+              <span className="text-[8px] text-white/50 ml-2">il y a 2h</span>
+            </div>
+          </div>
+
+          {/* Center content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+            <div className="text-[40px] mb-4 opacity-80">🎬</div>
+            <p className="text-[14px] font-semibold text-white leading-snug mb-4" style={{ textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
+              <span className="text-[var(--color-gold)]">@ThomasV</span> merci pour cette journée incroyable 🎬
+            </p>
+
+            {/* Tag pill */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/10">
+              <div className="w-[18px] h-[18px] rounded-full bg-[#3B82F6] flex items-center justify-center text-[8px] font-bold">
+                T
+              </div>
+              <span className="text-[9px] font-medium text-white">Thomas V.</span>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="flex items-center gap-3 px-4 pb-6 pt-3">
+            <div className="flex-1 px-3 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-[10px] text-white/40">
+              Envoyer un message...
+            </div>
+            <div className="w-[32px] h-[32px] rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <span className="text-[14px]">❤️</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PhoneFrame>
+  );
+}
+
+/* ─── Chat Mockup for Feature Section 3 ─── */
+
+function MockupChat() {
+  return (
+    <PhoneFrame scale="large">
+      <div className="h-full flex flex-col text-white text-[10px]">
+        {/* Status bar spacer */}
+        <div className="h-8" />
+
+        {/* Chat header */}
+        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="opacity-50">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-[11px] font-bold">
+            E
+          </div>
+          <div>
+            <div className="font-semibold text-[11px]">ECLIPSE — Lumière</div>
+            <div className="text-[8px] text-white/30">8 membres</div>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 px-4 py-3 space-y-3 overflow-hidden">
+          {/* Incoming */}
+          <div className="flex gap-2">
+            <div className="w-[22px] h-[22px] rounded-full bg-[#8B5CF6] flex items-center justify-center text-[8px] font-bold flex-shrink-0 mt-1">S</div>
+            <div>
+              <div className="text-[8px] text-white/40 mb-0.5">Sophie &middot; Chef Elec</div>
+              <div className="px-3 py-2 rounded-2xl rounded-tl-md bg-white/[0.06] text-[10px] text-white/70 max-w-[200px]">
+                Le 5K est dispo demain. On prend le kit complet ou juste les mandarines ?
+              </div>
+            </div>
+          </div>
+
+          {/* Outgoing */}
+          <div className="flex justify-end">
+            <div className="px-3 py-2 rounded-2xl rounded-tr-md bg-[var(--color-gold)]/20 text-[10px] text-white/80 max-w-[200px]">
+              Kit complet + les 2 sky panels SVP 🙏
+            </div>
+          </div>
+
+          {/* Incoming */}
+          <div className="flex gap-2">
+            <div className="w-[22px] h-[22px] rounded-full bg-[#3B82F6] flex items-center justify-center text-[8px] font-bold flex-shrink-0 mt-1">T</div>
+            <div>
+              <div className="text-[8px] text-white/40 mb-0.5">Thomas &middot; DOP</div>
+              <div className="px-3 py-2 rounded-2xl rounded-tl-md bg-white/[0.06] text-[10px] text-white/70 max-w-[200px]">
+                Parfait. J'ai partagé la FDS mise à jour dans Documents
+              </div>
+            </div>
+          </div>
+
+          {/* Document attachment */}
+          <div className="flex gap-2">
+            <div className="w-[22px] h-[22px] rounded-full bg-[#3B82F6] flex items-center justify-center text-[8px] font-bold flex-shrink-0 mt-1">T</div>
+            <div className="px-3 py-2 rounded-2xl rounded-tl-md bg-white/[0.06] max-w-[200px]">
+              <div className="flex items-center gap-2">
+                <div className="w-[28px] h-[28px] rounded-lg bg-[var(--color-gold)]/10 flex items-center justify-center text-[12px]">📄</div>
+                <div>
+                  <div className="text-[9px] font-semibold text-white/80">FDS_Eclipse_v2.pdf</div>
+                  <div className="text-[7px] text-white/30">1.2 MB</div>
                 </div>
-              ))}
-            </div>
-
-            {/* User info */}
-            <div className="flex items-center gap-2 px-4 mb-auto">
-              <div className="w-[28px] h-[28px] rounded-full bg-gradient-to-br from-[var(--color-gold)] to-[var(--color-gold)]/60 flex items-center justify-center text-[11px] font-bold text-[var(--color-dark)]">
-                S
-              </div>
-              <div>
-                <span className="text-[10px] font-semibold text-white">Sophie Marceau</span>
-                <span className="text-[8px] text-white/50 ml-2">il y a 2h</span>
               </div>
             </div>
+          </div>
 
-            {/* Center content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-              {/* Decorative film icon */}
-              <div className="text-[40px] mb-4 opacity-80">🎬</div>
-              <p className="text-[14px] font-semibold text-white leading-snug mb-4" style={{ textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
-                <span className="text-[var(--color-gold)]">@ThomasV</span> merci pour cette journée incroyable 🎬
-              </p>
-
-              {/* Tag pill */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/10">
-                <div className="w-[18px] h-[18px] rounded-full bg-[#3B82F6] flex items-center justify-center text-[8px] font-bold">
-                  T
-                </div>
-                <span className="text-[9px] font-medium text-white">Thomas V.</span>
-              </div>
-            </div>
-
-            {/* Bottom bar */}
-            <div className="flex items-center gap-3 px-4 pb-6 pt-3">
-              <div className="flex-1 px-3 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-[10px] text-white/40">
-                Envoyer un message...
-              </div>
-              <div className="w-[32px] h-[32px] rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-[14px]">❤️</span>
+          {/* Incoming */}
+          <div className="flex gap-2">
+            <div className="w-[22px] h-[22px] rounded-full bg-[#EC4899] flex items-center justify-center text-[8px] font-bold flex-shrink-0 mt-1">L</div>
+            <div>
+              <div className="text-[8px] text-white/40 mb-0.5">Léa &middot; Réalisatrice</div>
+              <div className="px-3 py-2 rounded-2xl rounded-tl-md bg-white/[0.06] text-[10px] text-white/70 max-w-[200px]">
+                Merci l'équipe, on est bons pour demain 🎬
               </div>
             </div>
           </div>
         </div>
-      </PhoneFrame>
+
+        {/* Input bar */}
+        <div className="px-4 py-3 border-t border-white/[0.06] flex items-center gap-2">
+          <div className="w-[28px] h-[28px] rounded-full bg-white/[0.06] flex items-center justify-center">
+            <span className="text-[12px]">+</span>
+          </div>
+          <div className="flex-1 px-3 py-2 rounded-full bg-white/[0.05] border border-white/[0.08] text-[10px] text-white/25">
+            Message...
+          </div>
+          <div className="w-[28px] h-[28px] rounded-full bg-[var(--color-gold)] flex items-center justify-center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-dark)" strokeWidth="2.5">
+              <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </PhoneFrame>
+  );
+}
+
+/* ─── Testimonial Card ─── */
+
+function TestimonialCard({
+  quote,
+  name,
+  role,
+  delay,
+}: {
+  quote: string;
+  name: string;
+  role: string;
+  delay: number;
+}) {
+  return (
+    <div
+      className="testimonial-card flex-shrink-0 w-[340px] md:w-auto md:flex-1 p-6 md:p-8 rounded-2xl glass-card"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {/* Quote mark */}
+      <div className="text-[var(--color-gold)] text-4xl leading-none mb-3 opacity-40 font-[var(--font-display)]">&ldquo;</div>
+
+      <p className="text-white/60 text-[15px] leading-relaxed mb-6">{quote}</p>
+
+      {/* Stars */}
+      <div className="flex gap-0.5 mb-4">
+        {[...Array(5)].map((_, i) => (
+          <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="var(--color-gold)" className="opacity-80">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        ))}
+      </div>
+
+      <div>
+        <div className="font-semibold text-[var(--color-gold)] text-sm">{name}</div>
+        <div className="text-white/30 text-xs">{role}</div>
+      </div>
     </div>
   );
 }
@@ -511,8 +719,11 @@ export default function Home() {
   // Scroll progress bar
   const scrollProgress = useScrollProgress();
 
-  // Parallax for phone mockups
+  // Parallax for phone mockups (scroll-based)
   const parallaxRef = useParallax();
+
+  // Cursor-based 3D parallax for hero phones
+  const { containerRef: heroContainerRef, phonesRef: heroPhonesRef } = useCursorParallax();
 
   // Counter animations
   const [counterRef1, count1] = useCountUp(50, "+", 1500);
@@ -570,10 +781,12 @@ export default function Home() {
         </a>
       </nav>
 
-      {/* Hero */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-12 md:pt-20 pb-12">
+      {/* ═══════════════════════════════════════════════ */}
+      {/* HERO                                           */}
+      {/* ═══════════════════════════════════════════════ */}
+      <section ref={heroContainerRef} className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-12 md:pt-20 pb-12">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          {/* Hero text — left side (40% on desktop) */}
+          {/* Hero text — left side */}
           <div className="lg:w-[42%] lg:flex-shrink-0">
             <div className="badge-entrance inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/5 mb-8">
               <span className="w-2 h-2 rounded-full bg-[var(--color-gold)] animate-pulse" />
@@ -582,14 +795,14 @@ export default function Home() {
               </span>
             </div>
 
-            <h1 className="font-[var(--font-display)] text-5xl md:text-7xl font-black leading-[1.05] tracking-tight mb-6">
+            <h1 className="font-[var(--font-display)] text-6xl md:text-8xl lg:text-9xl font-black leading-[0.95] tracking-tight mb-6">
               {heroWords.map((word, i) => {
                 const isGold = word.gold;
                 const isLineBreak = i === 1 || i === 3;
                 return (
                   <span key={i}>
                     <span
-                      className={`hero-word ${isGold ? "gold-shimmer" : ""}`}
+                      className={`hero-word ${isGold ? "hero-gold-gradient" : ""}`}
                       style={{ animationDelay: `${0.4 + i * 0.2}s` }}
                     >
                       {word.text}
@@ -607,11 +820,19 @@ export default function Home() {
               })}
             </h1>
 
-            <p className="subtitle-entrance text-lg md:text-xl text-white/50 leading-relaxed max-w-xl mb-10">
+            <p className="subtitle-entrance text-lg md:text-xl text-white/50 leading-relaxed max-w-xl mb-4">
               Film KREW réunit tous les outils dont une équipe de tournage a besoin
               — projets, planning, communication, documents — dans une app conçue
               sur le plateau, pour le plateau.
             </p>
+
+            {/* Platform availability line */}
+            <div className="subtitle-entrance flex items-center gap-2 mb-10 text-white/30 text-sm">
+              <span>Disponible sur iOS</span>
+              <span className="text-base"></span>
+              <span>et Android</span>
+              <span className="text-base">🤖</span>
+            </div>
 
             <a
               href="#beta"
@@ -624,78 +845,173 @@ export default function Home() {
             </a>
           </div>
 
-          {/* Phone mockups — right side (58% on desktop) */}
+          {/* Phone mockups — right side (desktop: 3 phones with cursor parallax) */}
           <div
-            ref={parallaxRef}
-            className="hidden lg:flex items-center justify-center lg:w-[58%] gap-[-8px] phone-entrance parallax-phones"
+            className="hidden lg:flex items-center justify-center lg:w-[58%] gap-[-8px] phone-entrance"
           >
-            <MockupKrewFeed />
-            <MockupProjectDashboard />
-            <MockupStoryViewer />
-          </div>
-        </div>
-
-        {/* Phone mockups — horizontal scroll (mobile/tablet) */}
-        <div className="lg:hidden mt-14 -mx-6 px-6 overflow-x-auto">
-          <div className="flex items-center gap-6 pb-4 w-max">
-            <MockupKrewFeed />
-            <MockupProjectDashboard />
-            <MockupStoryViewer />
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {[
-            {
-              icon: "🎬",
-              title: "Projets",
-              desc: "Créez et gérez vos projets de film. Équipe, planning, budget — tout au même endroit.",
-            },
-            {
-              icon: "💬",
-              title: "Communication",
-              desc: "Channels par projet, DMs, annonces. Fini les groupes WhatsApp qui explosent.",
-            },
-            {
-              icon: "📋",
-              title: "Documents",
-              desc: "FDS, contrats, droits à l'image. Créez, signez et partagez depuis l'app.",
-            },
-            {
-              icon: "👥",
-              title: "Réseau KREW",
-              desc: "Connectez-vous avec votre équipe. Feed social, stories, talent directory.",
-            },
-            {
-              icon: "🔧",
-              title: "50+ Outils Pro",
-              desc: "Calculateurs DOP, gestion équipement, rapports, météo plateau — 13 départements couverts.",
-            },
-            {
-              icon: "🔔",
-              title: "Notifications",
-              desc: "Recherches de techniciens et talents. Soyez alerté quand votre réseau recrute.",
-            },
-          ].map((f, i) => (
-            <div
-              key={i}
-              data-stagger={i}
-              className="feature-card group p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06] cursor-default"
-            >
-              <span className="text-4xl mb-4 block">{f.icon}</span>
-              <h3 className="font-[var(--font-display)] text-lg font-bold mb-2">
-                {f.title}
-              </h3>
-              <p className="text-white/40 text-sm leading-relaxed">{f.desc}</p>
+            <div ref={heroPhonesRef} className="flex items-center justify-center gap-[-8px] cursor-parallax-phones">
+              <div className="animate-phone-float-delayed order-1">
+                <MockupKrewFeed />
+              </div>
+              <div className="animate-phone-float order-2" style={{ position: 'relative', zIndex: 10 }}>
+                <MockupProjectDashboard />
+              </div>
+              <div className="animate-phone-float-delayed order-3" style={{ position: 'relative', zIndex: -1 }}>
+                <MockupStoryViewer />
+              </div>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Phone mockups — mobile: single center phone only */}
+        <div className="lg:hidden mt-14 flex justify-center phone-entrance">
+          <div className="animate-phone-float">
+            <MockupProjectDashboard />
+          </div>
         </div>
       </section>
 
-      {/* How it works */}
+      {/* ═══════════════════════════════════════════════ */}
+      {/* FEATURE SECTIONS (3 large alternating)         */}
+      {/* ═══════════════════════════════════════════════ */}
+
+      {/* Feature 1: Gérez vos projets — mockup left, text right */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+          {/* Mockup */}
+          <div className="slide-in-left lg:w-1/2 flex justify-center">
+            <div className="relative">
+              <div className="absolute -inset-20 bg-[var(--color-gold)] opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
+              <MockupProjectDashboard large />
+            </div>
+          </div>
+          {/* Text */}
+          <div className="slide-in-right lg:w-1/2">
+            <h2 className="font-[var(--font-display)] text-3xl md:text-5xl font-black mb-8 leading-tight">
+              Gérez vos{" "}
+              <span className="text-[var(--color-gold)]">projets</span>
+            </h2>
+            <div className="space-y-5">
+              {[
+                { icon: "🎬", text: "Créez et organisez vos projets" },
+                { icon: "👥", text: "Invitez votre équipe par département" },
+                { icon: "📅", text: "Planning, budget, phases de production" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-4 group">
+                  <span className="text-2xl flex-shrink-0 mt-0.5">{item.icon}</span>
+                  <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature 2: Votre réseau KREW — text left, mockup right */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <div className="flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-20">
+          {/* Mockup */}
+          <div className="slide-in-right lg:w-1/2 flex justify-center">
+            <div className="relative">
+              <div className="absolute -inset-20 bg-[var(--color-accent)] opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
+              <MockupKrewFeed large />
+            </div>
+          </div>
+          {/* Text */}
+          <div className="slide-in-left lg:w-1/2">
+            <h2 className="font-[var(--font-display)] text-3xl md:text-5xl font-black mb-8 leading-tight">
+              Votre réseau{" "}
+              <span className="text-[var(--color-gold)]">KREW</span>
+            </h2>
+            <div className="space-y-5">
+              {[
+                { icon: "💬", text: "Feed social dédié au cinéma" },
+                { icon: "🔍", text: "Recherche de techniciens et talents" },
+                { icon: "📸", text: "Stories, mentions, réactions" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-4 group">
+                  <span className="text-2xl flex-shrink-0 mt-0.5">{item.icon}</span>
+                  <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature 3: Communication centralisée — mockup left, text right */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+          {/* Mockup */}
+          <div className="slide-in-left lg:w-1/2 flex justify-center">
+            <div className="relative">
+              <div className="absolute -inset-20 bg-emerald-500 opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
+              <MockupChat />
+            </div>
+          </div>
+          {/* Text */}
+          <div className="slide-in-right lg:w-1/2">
+            <h2 className="font-[var(--font-display)] text-3xl md:text-5xl font-black mb-8 leading-tight">
+              Communication{" "}
+              <span className="text-[var(--color-gold)]">centralisée</span>
+            </h2>
+            <div className="space-y-5">
+              {[
+                { icon: "💬", text: "Channels par projet et département" },
+                { icon: "📩", text: "DMs avec partage de publications" },
+                { icon: "📋", text: "Documents, FDS, contrats" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-4 group">
+                  <span className="text-2xl flex-shrink-0 mt-0.5">{item.icon}</span>
+                  <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════ */}
+      {/* TESTIMONIALS                                   */}
+      {/* ═══════════════════════════════════════════════ */}
+      <section className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <h2 className="font-[var(--font-display)] text-3xl md:text-5xl font-black text-center mb-14">
+          Ce qu&apos;ils en{" "}
+          <span className="text-[var(--color-gold)]">pensent</span>
+        </h2>
+
+        {/* Desktop: row, Mobile: horizontal scroll with snap */}
+        <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none pb-4 md:pb-0 -mx-6 px-6 md:mx-0 md:px-0">
+          <TestimonialCard
+            quote="Film KREW a changé notre façon de communiquer sur le plateau. Plus besoin de 15 groupes WhatsApp."
+            name="Claire Mathon"
+            role="Directrice Photo"
+            delay={0}
+          />
+          <TestimonialCard
+            quote="Enfin une app pensée par des gens du milieu. Les outils DOP sont exactement ce qu'il me fallait."
+            name="Romain Music"
+            role="Chef Opérateur"
+            delay={150}
+          />
+          <TestimonialCard
+            quote="La recherche de techniciens via le réseau KREW nous a fait gagner un temps fou en pré-prod."
+            name="Julie Gayet"
+            role="Productrice"
+            delay={300}
+          />
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════ */}
+      {/* HOW IT WORKS                                   */}
+      {/* ═══════════════════════════════════════════════ */}
       <section className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-12">
         <h2 className="font-[var(--font-display)] text-3xl md:text-4xl font-black text-center mb-12">
           Comment ça <span className="text-[var(--color-gold)]">marche</span>
@@ -761,6 +1077,39 @@ export default function Home() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════ */}
+      {/* CTA BANNER                                     */}
+      {/* ═══════════════════════════════════════════════ */}
+      <section className="relative z-10 my-16 mx-6 md:mx-12 lg:mx-auto max-w-7xl">
+        <div className="cta-banner relative rounded-3xl overflow-hidden px-8 py-16 md:py-20 text-center">
+          {/* Animated gradient border */}
+          <div className="cta-banner-border" />
+
+          {/* Background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#141414] via-[#1a1510] to-[#141414]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(200,169,110,0.08)_0%,transparent_70%)]" />
+
+          <div className="relative z-10">
+            <h2 className="font-[var(--font-display)] text-3xl md:text-5xl lg:text-6xl font-black mb-4 leading-tight">
+              Prêt à rejoindre le{" "}
+              <span className="text-[var(--color-gold)]">KREW</span> ?
+            </h2>
+            <p className="text-white/40 text-lg md:text-xl mb-10 max-w-lg mx-auto">
+              Inscrivez-vous maintenant et soyez parmi les premiers.
+            </p>
+            <a
+              href="#beta"
+              className="inline-flex items-center gap-2 px-10 py-5 rounded-full bg-[var(--color-gold)] text-[var(--color-dark)] font-bold text-lg hover:bg-[var(--color-gold-light)] transition-all hover:scale-[1.02] active:scale-[0.98] animate-subtle-pulse"
+            >
+              Demander un accès
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </a>
+          </div>
         </div>
       </section>
 
