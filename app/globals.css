@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gold: #C8A96E;
+  --color-gold-dark: #A68B4B;
+  --color-gold-light: #E0C992;
+  --color-dark: #0A0A0A;
+  --color-dark-card: #141414;
+  --color-dark-elevated: #1A1A1A;
+  --color-accent: #EC5B13;
+  --font-display: "Playfair Display", serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-dark);
+    color: #ffffff;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-gold);
+    color: var(--color-dark);
+  }
+}
