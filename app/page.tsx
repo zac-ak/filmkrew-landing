@@ -51,14 +51,32 @@ function useScrollAnimation() {
       { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
     );
 
+    // Cinematic phone reveal (delayed 1.5s for title animation to finish)
+    const cinematicPhones = document.querySelectorAll(".phone-cinematic, .phone-cinematic-left, .phone-cinematic-right");
+    const phoneObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              entry.target.classList.add("revealed");
+            }, 1500);
+            phoneObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+
     elements.forEach((el) => observer.observe(el));
     featureCards.forEach((el) => cardObserver.observe(el));
     slideElements.forEach((el) => slideObserver.observe(el));
+    cinematicPhones.forEach((el) => phoneObserver.observe(el));
 
     return () => {
       observer.disconnect();
       cardObserver.disconnect();
       slideObserver.disconnect();
+      phoneObserver.disconnect();
     };
   }, []);
 }
@@ -761,7 +779,7 @@ function TestimonialCard({
 }) {
   return (
     <div
-      className="testimonial-card flex-shrink-0 w-[340px] md:w-auto md:flex-1 p-6 md:p-8 rounded-2xl glass-card"
+      className="testimonial-card flex-shrink-0 w-[340px] md:w-auto md:flex-1 p-6 md:p-8 rounded-2xl bg-white/[0.04] border border-white/[0.08] hover:border-[var(--color-gold)]/20 transition-colors"
       style={{ animationDelay: `${delay}ms` }}
     >
       {/* Quote mark */}
@@ -929,16 +947,16 @@ export default function Home() {
 
           {/* Phone mockups — right side (desktop: 3 phones with cursor parallax) */}
           <div
-            className="hidden lg:flex items-center justify-center lg:w-[58%] phone-entrance"
+            className="hidden lg:flex items-center justify-center lg:w-[58%]"
           >
             <div ref={heroPhonesRef} className="flex items-center justify-center cursor-parallax-phones">
-              <div className="animate-phone-float-delayed" style={{ marginRight: '-40px' }}>
+              <div className="phone-cinematic-left" style={{ marginRight: '-40px' }}>
                 <MockupKrewFeed />
               </div>
-              <div className="animate-phone-float">
+              <div className="phone-cinematic">
                 <MockupProjectDashboard />
               </div>
-              <div className="animate-phone-float-delayed" style={{ marginLeft: '-40px' }}>
+              <div className="phone-cinematic-right" style={{ marginLeft: '-40px' }}>
                 <MockupStoryViewer />
               </div>
             </div>
