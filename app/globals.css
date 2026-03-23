@@ -331,32 +331,8 @@
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid transparent;
+  border: 1px solid rgba(200, 169, 110, 0.15);
   overflow: hidden;
-}
-
-.glass-card::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: conic-gradient(
-    from var(--border-angle, 0deg),
-    transparent 0%,
-    transparent 25%,
-    rgba(200, 169, 110, 0.4) 35%,
-    rgba(200, 169, 110, 0.7) 50%,
-    rgba(200, 169, 110, 0.4) 65%,
-    transparent 75%,
-    transparent 100%
-  );
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  animation: border-glow-rotate 6s linear infinite;
-  pointer-events: none;
 }
 
 @property --border-angle {
@@ -375,22 +351,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(
-    from var(--border-angle, 0deg),
-    transparent 0%,
-    transparent 20%,
-    rgba(200, 169, 110, 0.3) 30%,
-    rgba(200, 169, 110, 0.6) 50%,
-    rgba(200, 169, 110, 0.3) 70%,
-    transparent 80%,
-    transparent 100%
-  );
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  animation: border-glow-rotate 4s linear infinite;
+  border: 1px solid rgba(200, 169, 110, 0.2);
   pointer-events: none;
   z-index: -1;
 }
@@ -404,6 +365,12 @@
 .parallax-phones {
   will-change: transform;
   transition: transform 0.1s linear;
+}
+
+/* Feature section phone parallax — moves slower than text */
+.feature-phone-parallax {
+  will-change: transform;
+  transition: transform 0.05s linear;
 }
 
 /* ─── How it works connector line ─── */

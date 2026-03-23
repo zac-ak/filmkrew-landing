@@ -114,6 +114,31 @@ function useParallax() {
   return ref;
 }
 
+/* ─── Feature Phone Scroll Parallax ─── */
+function useFeatureParallax() {
+  useEffect(() => {
+    let ticking = false;
+    const phones = document.querySelectorAll<HTMLElement>(".feature-phone-parallax");
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          phones.forEach((phone) => {
+            const rect = phone.getBoundingClientRect();
+            const center = rect.top + rect.height / 2;
+            const viewCenter = window.innerHeight / 2;
+            const offset = (center - viewCenter) * 0.12;
+            phone.style.transform = `translateY(${-offset}px)`;
+          });
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+}
+
 /* ─── Cursor Parallax Hook for 3D phone tilt ─── */
 
 function useCursorParallax() {
@@ -777,6 +802,7 @@ export default function Home() {
 
   // Parallax for phone mockups (scroll-based)
   const parallaxRef = useParallax();
+  useFeatureParallax();
 
   // Cursor-based 3D parallax for hero phones
   const { containerRef: heroContainerRef, phonesRef: heroPhonesRef } = useCursorParallax();
@@ -935,7 +961,7 @@ export default function Home() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           {/* Mockup */}
-          <div className="slide-in-left lg:w-1/2 flex justify-center">
+          <div className="slide-in-left lg:w-1/2 flex justify-center feature-phone-parallax">
             <div className="relative">
               <div className="absolute -inset-20 bg-[var(--color-gold)] opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
               <MockupProjectDashboard large />
@@ -972,7 +998,7 @@ export default function Home() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
         <div className="flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-20">
           {/* Mockup */}
-          <div className="slide-in-right lg:w-1/2 flex justify-center">
+          <div className="slide-in-right lg:w-1/2 flex justify-center feature-phone-parallax">
             <div className="relative">
               <div className="absolute -inset-20 bg-[var(--color-accent)] opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
               <MockupKrewFeed large />
@@ -1009,7 +1035,7 @@ export default function Home() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           {/* Mockup */}
-          <div className="slide-in-left lg:w-1/2 flex justify-center">
+          <div className="slide-in-left lg:w-1/2 flex justify-center feature-phone-parallax">
             <div className="relative">
               <div className="absolute -inset-20 bg-emerald-500 opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
               <MockupChat />
