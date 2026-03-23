@@ -13,6 +13,10 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--color-dark);
     color: #ffffff;
@@ -24,4 +28,362 @@
     background-color: var(--color-gold);
     color: var(--color-dark);
   }
+}
+
+/* ─── Scroll Progress Bar ─── */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-gold-dark), var(--color-gold), var(--color-gold-light));
+  z-index: 9999;
+  transition: width 0.05s linear;
+  pointer-events: none;
+}
+
+/* ─── Hero Word Stagger Animation ─── */
+@keyframes word-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.hero-word {
+  display: inline-block;
+  opacity: 0;
+  animation: word-fade-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Gold Shimmer Effect ─── */
+@keyframes gold-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold) 0%,
+    var(--color-gold) 35%,
+    var(--color-gold-light) 45%,
+    #FFF5D4 50%,
+    var(--color-gold-light) 55%,
+    var(--color-gold) 65%,
+    var(--color-gold) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-shimmer 3s ease-in-out infinite;
+  animation-delay: 1.8s;
+}
+
+/* Nav logo shimmer on hover */
+.nav-logo-shimmer:hover .gold-text {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold) 0%,
+    var(--color-gold) 30%,
+    #FFF5D4 50%,
+    var(--color-gold) 70%,
+    var(--color-gold) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-shimmer 1.5s ease-in-out;
+}
+
+.nav-logo-shimmer .gold-text {
+  transition: all 0.3s ease;
+}
+
+/* ─── Phone Slide-in ─── */
+@keyframes phone-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(80px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.phone-entrance {
+  opacity: 0;
+  animation: phone-slide-in 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 1.6s;
+}
+
+/* ─── Cinema Light Beam ─── */
+@keyframes light-beam {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  15% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+.cinema-beam {
+  position: absolute;
+  top: -20%;
+  left: 0;
+  width: 40%;
+  height: 140%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(200, 169, 110, 0.04) 30%,
+    rgba(200, 169, 110, 0.08) 50%,
+    rgba(200, 169, 110, 0.04) 70%,
+    transparent 100%
+  );
+  animation: light-beam 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.5s;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Floating Particles ─── */
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--particle-opacity, 0.3);
+  }
+  90% {
+    opacity: var(--particle-opacity, 0.3);
+  }
+  100% {
+    transform: translateY(calc(-100vh - 20px)) translateX(var(--particle-drift, 20px));
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: absolute;
+  width: var(--particle-size, 2px);
+  height: var(--particle-size, 2px);
+  border-radius: 50%;
+  background: var(--color-gold);
+  opacity: 0;
+  animation: particle-float var(--particle-duration, 12s) linear infinite;
+  animation-delay: var(--particle-delay, 0s);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* ─── Floating phone animation ─── */
+@keyframes phone-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes phone-float-delayed {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-phone-float {
+  animation: phone-float 5s ease-in-out infinite;
+}
+
+.animate-phone-float-delayed {
+  animation: phone-float-delayed 6s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* ─── Scroll fade-in-up animation ─── */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.animate-on-scroll.is-visible .stagger-1 { transition-delay: 0.1s; }
+.animate-on-scroll.is-visible .stagger-2 { transition-delay: 0.2s; }
+.animate-on-scroll.is-visible .stagger-3 { transition-delay: 0.3s; }
+
+/* ─── Feature card 3D entrance ─── */
+.feature-card {
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0;
+  transform: perspective(800px) rotateY(8deg) rotateX(4deg) translateY(30px);
+}
+
+.feature-card.is-visible {
+  opacity: 1;
+  transform: perspective(800px) rotateY(0deg) rotateX(0deg) translateY(0);
+}
+
+.feature-card:hover {
+  border-color: rgba(200, 169, 110, 0.35);
+  box-shadow: 0 0 25px rgba(200, 169, 110, 0.08), 0 0 60px rgba(200, 169, 110, 0.04);
+  background: linear-gradient(135deg, rgba(200, 169, 110, 0.06), rgba(255, 255, 255, 0.03));
+  transform: perspective(800px) rotateY(0deg) rotateX(0deg) translateY(-8px);
+}
+
+/* ─── Button pulse animation ─── */
+@keyframes subtle-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 169, 110, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(200, 169, 110, 0); }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2.5s ease-in-out infinite;
+}
+
+/* ─── Glass card with animated gradient border ─── */
+@keyframes border-glow-rotate {
+  0% {
+    --border-angle: 0deg;
+  }
+  100% {
+    --border-angle: 360deg;
+  }
+}
+
+.glass-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 0%,
+    transparent 25%,
+    rgba(200, 169, 110, 0.4) 35%,
+    rgba(200, 169, 110, 0.7) 50%,
+    rgba(200, 169, 110, 0.4) 65%,
+    transparent 75%,
+    transparent 100%
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  animation: border-glow-rotate 6s linear infinite;
+  pointer-events: none;
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ─── Counter Animation ─── */
+.counter-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Parallax helpers ─── */
+.parallax-phones {
+  will-change: transform;
+  transition: transform 0.1s linear;
+}
+
+/* ─── How it works connector line ─── */
+.step-connector {
+  position: relative;
+}
+
+.step-connector::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -2rem;
+  width: 3rem;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(200, 169, 110, 0.4), rgba(200, 169, 110, 0.1));
+  transform: translateY(-50%);
+}
+
+@media (max-width: 768px) {
+  .step-connector::after {
+    display: none;
+  }
+}
+
+/* ─── Badge entrance ─── */
+@keyframes badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.badge-entrance {
+  opacity: 0;
+  animation: badge-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.2s;
+}
+
+/* ─── Subtitle entrance ─── */
+@keyframes subtitle-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.subtitle-entrance {
+  opacity: 0;
+  animation: subtitle-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 1.6s;
+}
+
+/* ─── CTA entrance ─── */
+.cta-entrance {
+  opacity: 0;
+  animation: subtitle-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 1.9s;
 }
