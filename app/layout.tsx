@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Film KREW — L'app des équipes de tournage",
-  description: "Gérez vos projets, votre équipe et vos tournages depuis une seule app. Rejoignez la beta.",
+  title: "Film KREW — L'app des equipes de tournage",
+  description:
+    "Film KREW reunit tous les outils dont une equipe de tournage a besoin. Projets, planning, communication, documents — dans une app concue sur le plateau.",
   keywords: ["film", "krew", "tournage", "cinéma", "équipe", "production", "app"],
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
-    title: "Film KREW — L'app des équipes de tournage",
-    description: "Gérez vos projets, votre équipe et vos tournages depuis une seule app.",
+    title: "Film KREW — L'app des equipes de tournage",
+    description:
+      "Film KREW reunit tous les outils dont une equipe de tournage a besoin. Projets, planning, communication, documents — dans une app concue sur le plateau.",
     url: "https://filmkrew.app",
     siteName: "Film KREW",
     type: "website",

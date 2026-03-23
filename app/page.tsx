@@ -173,7 +173,7 @@ function useCursorParallax() {
 function useCountUp(
   target: number,
   suffix: string,
-  duration: number = 1500
+  duration: number = 800
 ): [React.RefObject<HTMLDivElement | null>, string] {
   const ref = useRef<HTMLDivElement>(null);
   const [display, setDisplay] = useState(`0${suffix}`);
@@ -182,6 +182,8 @@ function useCountUp(
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    let rafId: number;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -199,11 +201,14 @@ function useCountUp(
               setDisplay(`${current}${suffix}`);
 
               if (progress < 1) {
-                requestAnimationFrame(animate);
+                rafId = requestAnimationFrame(animate);
+              } else {
+                // Ensure final value is always set
+                setDisplay(`${target}${suffix}`);
               }
             };
 
-            requestAnimationFrame(animate);
+            rafId = requestAnimationFrame(animate);
           }
         });
       },
@@ -211,7 +216,14 @@ function useCountUp(
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId);
+      // Force final value on cleanup
+      if (hasAnimated.current) {
+        setDisplay(`${target}${suffix}`);
+      }
+    };
   }, [target, suffix, duration]);
 
   return [ref, display];
@@ -277,7 +289,7 @@ function PhoneFrame({
   scale?: "normal" | "large";
 }) {
   const sizes = scale === "large"
-    ? "w-[300px] h-[620px] md:w-[320px] md:h-[660px]"
+    ? "w-[300px] h-[560px] md:w-[320px] md:h-[600px]"
     : "w-[260px] h-[540px]";
 
   return (
@@ -298,7 +310,7 @@ function PhoneFrame({
 
 function MockupKrewFeed({ large = false }: { large?: boolean }) {
   return (
-    <PhoneFrame scale={large ? "large" : "normal"} className={large ? "" : "relative z-0 rotate-[-6deg] scale-[0.88] translate-x-[20px]"}>
+    <PhoneFrame scale={large ? "large" : "normal"} className={large ? "" : "relative rotate-[-6deg] scale-[0.88]"}>
       <div className="h-full flex flex-col text-white text-[10px]">
         {/* Status bar spacer */}
         <div className="h-8" />
@@ -386,6 +398,30 @@ function MockupKrewFeed({ large = false }: { large?: boolean }) {
             </span>
           ))}
         </div>
+
+        {/* Second post card */}
+        <div className="mx-4 mt-3 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-[26px] h-[26px] rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#8B5CF6]/60 flex items-center justify-center text-[10px] font-bold">
+              S
+            </div>
+            <div>
+              <div className="font-semibold text-[9px] text-white/90">SOPHIE MARCEAU</div>
+              <div className="text-[7px] text-white/30">Réalisatrice &middot; il y a 6h</div>
+            </div>
+          </div>
+          <div className="inline-block px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[8px] font-semibold mb-2">
+            WRAP
+          </div>
+          <p className="text-[9px] text-white/50 leading-relaxed">
+            C'est un wrap sur ECLIPSE ! Merci a toute l'equipe 🎬🙏
+          </p>
+          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/[0.05]">
+            <span className="text-white/30">🤙 34</span>
+            <span className="text-white/30">💬 12</span>
+            <span className="text-white/30">↗ 8</span>
+          </div>
+        </div>
       </div>
     </PhoneFrame>
   );
@@ -393,7 +429,7 @@ function MockupKrewFeed({ large = false }: { large?: boolean }) {
 
 function MockupProjectDashboard({ large = false }: { large?: boolean }) {
   return (
-    <PhoneFrame scale={large ? "large" : "normal"} className={large ? "" : "relative z-20 scale-[1.15] shadow-[0_0_80px_rgba(200,169,110,0.12),0_30px_60px_rgba(0,0,0,0.6)]"}>
+    <PhoneFrame scale={large ? "large" : "normal"} className={large ? "" : "relative scale-[1.15] shadow-[0_0_80px_rgba(200,169,110,0.12),0_30px_60px_rgba(0,0,0,0.6)]"}>
       <div className="h-full flex flex-col text-white text-[10px]">
         {/* Status bar spacer */}
         <div className="h-8" />
@@ -474,6 +510,8 @@ function MockupProjectDashboard({ large = false }: { large?: boolean }) {
               { avatar: "L", color: "#EC4899", text: "Léa a uploadé le script v3", time: "il y a 2h" },
               { avatar: "T", color: "#3B82F6", text: "Thomas a confirmé les dates", time: "il y a 5h" },
               { avatar: "S", color: "#8B5CF6", text: "Sophie a validé le budget", time: "hier" },
+              { avatar: "M", color: "#EC5B13", text: "Malik a ajouté la shotlist", time: "hier" },
+              { avatar: "A", color: "#10B981", text: "Ahmed a réservé le matériel", time: "il y a 2j" },
             ].map((a, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div
@@ -497,7 +535,7 @@ function MockupProjectDashboard({ large = false }: { large?: boolean }) {
 
 function MockupStoryViewer() {
   return (
-    <PhoneFrame className="relative -z-10 rotate-[6deg] scale-[0.88] -translate-x-[40px]">
+    <PhoneFrame className="relative rotate-[6deg] scale-[0.88]">
       <div className="h-full flex flex-col relative">
         {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0F2847] via-[#0D3B4F] to-[#0A2F3A]" />
@@ -644,6 +682,24 @@ function MockupChat() {
               </div>
             </div>
           </div>
+
+          {/* Outgoing */}
+          <div className="flex justify-end">
+            <div className="px-3 py-2 rounded-2xl rounded-tr-md bg-[var(--color-gold)]/20 text-[10px] text-white/80 max-w-[200px]">
+              RDV 6h30 sur le plateau 👊
+            </div>
+          </div>
+
+          {/* Incoming */}
+          <div className="flex gap-2">
+            <div className="w-[22px] h-[22px] rounded-full bg-[#10B981] flex items-center justify-center text-[8px] font-bold flex-shrink-0 mt-1">A</div>
+            <div>
+              <div className="text-[8px] text-white/40 mb-0.5">Ahmed &middot; Régisseur</div>
+              <div className="px-3 py-2 rounded-2xl rounded-tl-md bg-white/[0.06] text-[10px] text-white/70 max-w-[200px]">
+                Catering confirmé, on aura café dès 6h ☕
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Input bar */}
@@ -726,9 +782,9 @@ export default function Home() {
   const { containerRef: heroContainerRef, phonesRef: heroPhonesRef } = useCursorParallax();
 
   // Counter animations
-  const [counterRef1, count1] = useCountUp(50, "+", 1500);
-  const [counterRef2, count2] = useCountUp(13, "", 1500);
-  const [counterRef3, count3] = useCountUp(100, "%", 1500);
+  const [counterRef1, count1] = useCountUp(50, "+", 800);
+  const [counterRef2, count2] = useCountUp(13, "", 800);
+  const [counterRef3, count3] = useCountUp(100, "%", 800);
 
   // Hero word animation data
   const heroWords = [
@@ -784,8 +840,8 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════ */}
       {/* HERO                                           */}
       {/* ═══════════════════════════════════════════════ */}
-      <section ref={heroContainerRef} className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-12 md:pt-20 pb-12">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+      <section ref={heroContainerRef} className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-8 md:pt-14 pb-8">
+        <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
           {/* Hero text — left side */}
           <div className="lg:w-[42%] lg:flex-shrink-0">
             <div className="badge-entrance inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/5 mb-8">
@@ -827,7 +883,7 @@ export default function Home() {
             </p>
 
             {/* Platform availability line */}
-            <div className="subtitle-entrance flex items-center gap-2 mb-10 text-white/30 text-sm">
+            <div className="subtitle-entrance flex items-center gap-2 mb-6 text-white/30 text-sm">
               <span>Disponible sur iOS</span>
               <span className="text-base"></span>
               <span>et Android</span>
@@ -847,16 +903,16 @@ export default function Home() {
 
           {/* Phone mockups — right side (desktop: 3 phones with cursor parallax) */}
           <div
-            className="hidden lg:flex items-center justify-center lg:w-[58%] gap-[-8px] phone-entrance"
+            className="hidden lg:flex items-center justify-center lg:w-[58%] phone-entrance"
           >
-            <div ref={heroPhonesRef} className="flex items-center justify-center gap-[-8px] cursor-parallax-phones">
-              <div className="animate-phone-float-delayed order-1">
+            <div ref={heroPhonesRef} className="flex items-center justify-center cursor-parallax-phones">
+              <div className="animate-phone-float-delayed" style={{ marginRight: '-40px' }}>
                 <MockupKrewFeed />
               </div>
-              <div className="animate-phone-float order-2" style={{ position: 'relative', zIndex: 10 }}>
+              <div className="animate-phone-float">
                 <MockupProjectDashboard />
               </div>
-              <div className="animate-phone-float-delayed order-3" style={{ position: 'relative', zIndex: -1 }}>
+              <div className="animate-phone-float-delayed" style={{ marginLeft: '-40px' }}>
                 <MockupStoryViewer />
               </div>
             </div>
@@ -864,7 +920,7 @@ export default function Home() {
         </div>
 
         {/* Phone mockups — mobile: single center phone only */}
-        <div className="lg:hidden mt-14 flex justify-center phone-entrance">
+        <div className="lg:hidden mt-8 flex justify-center phone-entrance">
           <div className="animate-phone-float">
             <MockupProjectDashboard />
           </div>
@@ -876,7 +932,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════ */}
 
       {/* Feature 1: Gérez vos projets — mockup left, text right */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           {/* Mockup */}
           <div className="slide-in-left lg:w-1/2 flex justify-center">
@@ -893,15 +949,18 @@ export default function Home() {
             </h2>
             <div className="space-y-5">
               {[
-                { icon: "🎬", text: "Créez et organisez vos projets" },
-                { icon: "👥", text: "Invitez votre équipe par département" },
-                { icon: "📅", text: "Planning, budget, phases de production" },
+                { icon: "🎬", text: "Créez et organisez vos projets", sub: "Court-métrage, long, série, clip — tous les formats" },
+                { icon: "👥", text: "Invitez votre équipe par département", sub: "Image, lumière, son, déco, HMC et plus" },
+                { icon: "📅", text: "Planning, budget, phases de production", sub: "De la pré-prod à la post-prod" },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-4 group">
                   <span className="text-2xl flex-shrink-0 mt-0.5">{item.icon}</span>
-                  <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
-                    {item.text}
-                  </p>
+                  <div>
+                    <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
+                      {item.text}
+                    </p>
+                    <p className="text-sm text-white/30 mt-0.5">{item.sub}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -910,7 +969,7 @@ export default function Home() {
       </section>
 
       {/* Feature 2: Votre réseau KREW — text left, mockup right */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
         <div className="flex flex-col lg:flex-row-reverse items-center gap-12 lg:gap-20">
           {/* Mockup */}
           <div className="slide-in-right lg:w-1/2 flex justify-center">
@@ -927,15 +986,18 @@ export default function Home() {
             </h2>
             <div className="space-y-5">
               {[
-                { icon: "💬", text: "Feed social dédié au cinéma" },
-                { icon: "🔍", text: "Recherche de techniciens et talents" },
-                { icon: "📸", text: "Stories, mentions, réactions" },
+                { icon: "💬", text: "Feed social dédié au cinéma", sub: "Partagez vos projets et découvertes" },
+                { icon: "🔍", text: "Recherche de techniciens et talents", sub: "Trouvez le bon profil dans votre réseau" },
+                { icon: "📸", text: "Stories, mentions, réactions", sub: "Identifiez vos collaborateurs" },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-4 group">
                   <span className="text-2xl flex-shrink-0 mt-0.5">{item.icon}</span>
-                  <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
-                    {item.text}
-                  </p>
+                  <div>
+                    <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
+                      {item.text}
+                    </p>
+                    <p className="text-sm text-white/30 mt-0.5">{item.sub}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -944,7 +1006,7 @@ export default function Home() {
       </section>
 
       {/* Feature 3: Communication centralisée — mockup left, text right */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
+      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           {/* Mockup */}
           <div className="slide-in-left lg:w-1/2 flex justify-center">
@@ -961,15 +1023,18 @@ export default function Home() {
             </h2>
             <div className="space-y-5">
               {[
-                { icon: "💬", text: "Channels par projet et département" },
-                { icon: "📩", text: "DMs avec partage de publications" },
-                { icon: "📋", text: "Documents, FDS, contrats" },
+                { icon: "💬", text: "Channels par projet et département", sub: "Fini les 15 groupes WhatsApp" },
+                { icon: "📩", text: "DMs avec partage de publications", sub: "Envoyez des posts directement en message" },
+                { icon: "📋", text: "Documents, FDS, contrats", sub: "Tout centralisé, accessible hors-ligne" },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-4 group">
                   <span className="text-2xl flex-shrink-0 mt-0.5">{item.icon}</span>
-                  <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
-                    {item.text}
-                  </p>
+                  <div>
+                    <p className="text-white/50 text-lg leading-relaxed group-hover:text-white/70 transition-colors">
+                      {item.text}
+                    </p>
+                    <p className="text-sm text-white/30 mt-0.5">{item.sub}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -980,8 +1045,8 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════ */}
       {/* TESTIMONIALS                                   */}
       {/* ═══════════════════════════════════════════════ */}
-      <section className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24">
-        <h2 className="font-[var(--font-display)] text-3xl md:text-5xl font-black text-center mb-14">
+      <section className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
+        <h2 className="font-[var(--font-display)] text-3xl md:text-5xl font-black text-center mb-8">
           Ce qu&apos;ils en{" "}
           <span className="text-[var(--color-gold)]">pensent</span>
         </h2>
@@ -1012,8 +1077,8 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════ */}
       {/* HOW IT WORKS                                   */}
       {/* ═══════════════════════════════════════════════ */}
-      <section className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-12">
-        <h2 className="font-[var(--font-display)] text-3xl md:text-4xl font-black text-center mb-12">
+      <section className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10">
+        <h2 className="font-[var(--font-display)] text-3xl md:text-4xl font-black text-center mb-10">
           Comment ça <span className="text-[var(--color-gold)]">marche</span>
         </h2>
 
@@ -1083,8 +1148,8 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════ */}
       {/* CTA BANNER                                     */}
       {/* ═══════════════════════════════════════════════ */}
-      <section className="relative z-10 my-16 mx-6 md:mx-12 lg:mx-auto max-w-7xl">
-        <div className="cta-banner relative rounded-3xl overflow-hidden px-8 py-16 md:py-20 text-center">
+      <section className="relative z-10 my-8 mx-6 md:mx-12 lg:mx-auto max-w-7xl">
+        <div className="cta-banner relative rounded-3xl overflow-hidden px-8 py-10 text-center">
           {/* Animated gradient border */}
           <div className="cta-banner-border" />
 
@@ -1097,7 +1162,7 @@ export default function Home() {
               Prêt à rejoindre le{" "}
               <span className="text-[var(--color-gold)]">KREW</span> ?
             </h2>
-            <p className="text-white/40 text-lg md:text-xl mb-10 max-w-lg mx-auto">
+            <p className="text-white/40 text-lg md:text-xl mb-6 max-w-lg mx-auto">
               Inscrivez-vous maintenant et soyez parmi les premiers.
             </p>
             <a
@@ -1114,7 +1179,7 @@ export default function Home() {
       </section>
 
       {/* Beta signup */}
-      <section id="beta" className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-14">
+      <section id="beta" className="animate-on-scroll relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-10">
         <div className="max-w-lg mx-auto">
           <div className="glass-card rounded-3xl p-8 md:p-10">
             <div className="text-center">
