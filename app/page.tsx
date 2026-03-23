@@ -222,7 +222,7 @@ function PhoneFrame({
 
 function MockupKrewFeed() {
   return (
-    <div className="animate-phone-float-delayed">
+    <div className="animate-phone-float-delayed order-1">
       <PhoneFrame className="relative z-0 rotate-[-6deg] scale-[0.88] translate-x-[20px]">
         <div className="h-full flex flex-col text-white text-[10px]">
           {/* Status bar spacer */}
@@ -319,8 +319,8 @@ function MockupKrewFeed() {
 
 function MockupProjectDashboard() {
   return (
-    <div className="animate-phone-float">
-      <PhoneFrame className="z-10 scale-[1.15] shadow-[0_0_80px_rgba(200,169,110,0.12),0_30px_60px_rgba(0,0,0,0.6)]">
+    <div className="animate-phone-float order-2" style={{ position: 'relative', zIndex: 10 }}>
+      <PhoneFrame className="relative z-20 scale-[1.15] shadow-[0_0_80px_rgba(200,169,110,0.12),0_30px_60px_rgba(0,0,0,0.6)]">
         <div className="h-full flex flex-col text-white text-[10px]">
           {/* Status bar spacer */}
           <div className="h-8" />
@@ -425,8 +425,8 @@ function MockupProjectDashboard() {
 
 function MockupStoryViewer() {
   return (
-    <div className="animate-phone-float-delayed">
-      <PhoneFrame className="relative z-0 rotate-[6deg] scale-[0.88] -translate-x-[20px]">
+    <div className="animate-phone-float-delayed order-3" style={{ position: 'relative', zIndex: -1 }}>
+      <PhoneFrame className="relative -z-10 rotate-[6deg] scale-[0.88] -translate-x-[40px]">
         <div className="h-full flex flex-col relative">
           {/* Gradient background — deep blue to dark teal */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0F2847] via-[#0D3B4F] to-[#0A2F3A]" />
