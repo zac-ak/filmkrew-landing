@@ -875,7 +875,7 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2 md:gap-3">
           <a
-            href="https://app.filmkrew.app"
+            href="https://filmkrew-app.web.app"
             className="inline-flex px-4 md:px-5 py-2.5 rounded-full border border-[var(--color-gold)]/40 text-[var(--color-gold)] text-sm font-semibold hover:bg-[var(--color-gold)]/10 transition-colors"
           >
             Se connecter
@@ -955,7 +955,7 @@ export default function Home() {
             <p className="cta-entrance mt-4 text-sm text-white/40">
               Déjà membre ?{" "}
               <a
-                href="https://app.filmkrew.app"
+                href="https://filmkrew-app.web.app"
                 className="text-[var(--color-gold)] font-semibold hover:underline"
               >
                 Se connecter
