@@ -873,12 +873,20 @@ export default function Home() {
             <span className="gold-text text-[var(--color-gold)]">KREW</span>
           </span>
         </div>
-        <a
-          href="#beta"
-          className="hidden md:inline-flex px-5 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-dark)] text-sm font-semibold hover:bg-[var(--color-gold-light)] transition-colors"
-        >
-          Rejoindre la Beta
-        </a>
+        <div className="flex items-center gap-2 md:gap-3">
+          <a
+            href="https://app.filmkrew.app"
+            className="inline-flex px-4 md:px-5 py-2.5 rounded-full border border-[var(--color-gold)]/40 text-[var(--color-gold)] text-sm font-semibold hover:bg-[var(--color-gold)]/10 transition-colors"
+          >
+            Se connecter
+          </a>
+          <a
+            href="#beta"
+            className="hidden md:inline-flex px-5 py-2.5 rounded-full bg-[var(--color-gold)] text-[var(--color-dark)] text-sm font-semibold hover:bg-[var(--color-gold-light)] transition-colors"
+          >
+            Rejoindre la Beta
+          </a>
+        </div>
       </nav>
 
       {/* ═══════════════════════════════════════════════ */}
@@ -943,6 +951,16 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </a>
+
+            <p className="cta-entrance mt-4 text-sm text-white/40">
+              Déjà membre ?{" "}
+              <a
+                href="https://app.filmkrew.app"
+                className="text-[var(--color-gold)] font-semibold hover:underline"
+              >
+                Se connecter
+              </a>
+            </p>
           </div>
 
           {/* Phone mockups — right side (desktop: 3 phones with cursor parallax) */}
